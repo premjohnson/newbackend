@@ -56,14 +56,52 @@ app.use(cors(corsOptions));
 })();
 
 // Socket.IO Setup
+const facultySockets = {};
+
 io.on('connection', (socket) => {
     console.log('A new client connected:', socket.id);
 
+    // When a faculty member connects, store their socket ID with facultyId
+    socket.on('facultyConnected', (facultyId) => {
+        facultySockets[facultyId] = socket.id;
+        console.log(`Faculty connected: ${facultyId}, Socket ID: ${socket.id}`);
+    });
+
+    // When a student sends a message to a specific faculty
+    socket.on('sendMessageToFaculty', (data) => {
+        const { facultyId, studentId, message } = data;
+
+        // Check if the faculty is connected
+        if (facultySockets[facultyId]) {
+            // Emit the message to the specific faculty
+            io.to(facultySockets[facultyId]).emit('studentMessage', {
+                studentId: studentId,
+                message: message,
+            });
+            console.log(`Message sent to Faculty ${facultyId}`);
+        } else {
+            console.log('Faculty is not connected');
+        }
+    });
+
+    // Disconnect handling
+    socket.on('disconnect', () => {
+        // Remove the faculty from the mapping when they disconnect
+        for (let facultyId in facultySockets) {
+            if (facultySockets[facultyId] === socket.id) {
+                delete facultySockets[facultyId];
+                console.log(`Faculty disconnected: ${facultyId}`);
+            }
+        }
+    });
+
+    // Listen for assignment completion
     socket.on('assignmentCompleted', (data) => {
         console.log('Assignment Completed:', data);
         socket.broadcast.emit('facultyNotification', {
             message: `Student completed assignments. Message: ${data.message}`,
             facultyId: data.facultyId,
+            studentId: data.studentId,
         });
     });
 

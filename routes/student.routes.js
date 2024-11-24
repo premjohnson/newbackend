@@ -1,16 +1,15 @@
-// routes/student.routes.js
 import express from 'express';
-import studentController from '../controller/student.controller.js'; // Import the controller
+import { addStudent, sendRequestToFaculty, getStudentById } from '../controller/student.controller.js';
 
 const router = express.Router();
 
 // Route to add a student
-router.post('/students', studentController.addStudent);
+router.post('/add', addStudent);
 
 // Route to send a request to faculty
-router.post('/send-request', studentController.sendRequestToFaculty);
+router.post('/send-request', sendRequestToFaculty);
 
 // Route to get a student by ID
-router.get('/students/:studentId', studentController.getStudentById);
+router.get('/:studentId', getStudentById);
 
 export default router;

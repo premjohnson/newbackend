@@ -31,13 +31,26 @@ export const sendRequestToFaculty = async (req, res) => {
 
         // Update student record with the request message
         student.messageToFaculty = message;
-        // Do not automatically mark assignmentsCompleted as true unless this is the intended business logic
-        student.assignmentsCompleted = true; // Optional based on your logic
+        // Optional: Mark assignments as completed if necessary
+        student.assignmentsCompleted = true;
         await student.save();
 
+        // Send back the response including student and faculty details
         res.status(200).json({
             message: 'Request sent to faculty successfully!',
-            student,
+            student: {
+                studentId: student.studentId,
+                name: student.name,
+                className: student.className,
+                year: student.year,
+                email: student.email,
+                messageToFaculty: student.messageToFaculty,
+                assignmentsCompleted: student.assignmentsCompleted,
+            },
+            faculty: {
+                name: faculty.name,
+                subject: faculty.subject,
+            },
         });
     } catch (error) {
         console.error('Error in sending request to faculty:', error);
@@ -50,12 +63,12 @@ export const sendRequestToFaculty = async (req, res) => {
 
 // Add a new student
 export const addStudent = async (req, res) => {
-    const { studentId, name, className, email } = req.body;
+    const { studentId, name, className, year, email } = req.body;
 
     try {
         // Validate required fields
-        if (!studentId || !name || !className) {
-            return res.status(400).json({ message: 'Student ID, Name, and Class are required!' });
+        if (!studentId || !name || !className || !year) {
+            return res.status(400).json({ message: 'Student ID, Name, Class, and Year are required!' });
         }
 
         // Check if the student ID already exists
@@ -74,19 +87,21 @@ export const addStudent = async (req, res) => {
             studentId,
             name,
             className,
-            email: email || '', // Optional email field
+            year, // Add year to the new student record
+            email: email || '',
         });
 
         // Save the student to the database
         await newStudent.save();
 
-        // Send the response without sensitive data like `password` (if you had any in the future)
+        // Send the response
         res.status(201).json({
             message: 'Student added successfully!',
             data: {
                 studentId: newStudent.studentId,
                 name: newStudent.name,
                 className: newStudent.className,
+                year: newStudent.year,
                 email: newStudent.email,
             },
         });
@@ -99,6 +114,7 @@ export const addStudent = async (req, res) => {
     }
 };
 
+
 // Get a student by ID
 export const getStudentById = async (req, res) => {
     const { studentId } = req.params;
@@ -110,7 +126,15 @@ export const getStudentById = async (req, res) => {
             return res.status(404).json({ message: 'Student not found!' });
         }
 
-        res.status(200).json(student);
+        res.status(200).json({
+            studentId: student.studentId,
+            name: student.name,
+            className: student.className,
+            year: student.year, // Include year in the response
+            email: student.email,
+            messageToFaculty: student.messageToFaculty,
+            assignmentsCompleted: student.assignmentsCompleted,
+        });
     } catch (error) {
         console.error('Error fetching student:', error);
         res.status(500).json({
@@ -119,5 +143,6 @@ export const getStudentById = async (req, res) => {
         });
     }
 };
+
 
 export default { sendRequestToFaculty, addStudent, getStudentById }; // Exporting all functions as default
